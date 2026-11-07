@@ -27,5 +27,5 @@ else
 fi
 mkdir -p "$cache"
 docker run --rm --platform "$platform" -v "$repo:/src" -v "$cache:/work" -w /src \
-    -e CARGO_HOME=/work/cargo -e RUSTUP_HOME=/work/rustup -e XBOX_BUILD_DIR=/work/build "$image" \
+    -e XBOX_SKIP_TESTS="${XBOX_SKIP_TESTS:-0}" -e CARGO_HOME=/work/cargo -e RUSTUP_HOME=/work/rustup -e XBOX_BUILD_DIR=/work/build "$image" \
     bash -lc "set -euo pipefail$build"
