@@ -1119,7 +1119,7 @@ object SessionPrefs {
 
     fun startupSession(context: Context): String {
         val p = prefs(context)
-        return p.getString("startupSession", null) ?: if (p.getBoolean("runSteamAtStartup", false)) STARTUP_STEAM else STARTUP_OFF
+        return p.getString("startupSession", null) ?: STARTUP_DESKTOP
     }
 
     fun setStartupSession(context: Context, id: String) {

@@ -1737,8 +1737,7 @@ class FrontEndActivity : ComponentActivity() {
         if (intent.action != Intent.ACTION_MAIN && !(cold && intent.action == null)) return
         if (isFinishing || isDestroyed) return
         when (SessionPrefs.startupSession(this)) {
-            SessionPrefs.STARTUP_STEAM -> startSteamSession()
-            SessionPrefs.STARTUP_DESKTOP -> startSession(Intent(this, SessionActivity::class.java)
+            SessionPrefs.STARTUP_STEAM, SessionPrefs.STARTUP_DESKTOP -> startSession(Intent(this, SessionActivity::class.java)
                 .putExtra(SessionService.EXTRA_MODE, SessionService.MODE_DESKTOP))
         }
     }
