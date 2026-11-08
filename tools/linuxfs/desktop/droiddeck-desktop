@@ -115,34 +115,6 @@ if [ "$(cat /usr/share/droiddeck/kwin-compositor 2>/dev/null)" = opengl ]; then
   chmod 755 /run/droiddeck/kwin/kwin_wayland
   export PATH=/run/droiddeck/kwin:$PATH
 fi
-if [ "${BL_DESKTOP_ENV:-kde}" = gnome ]; then
-  gnome_packages="gnome-shell gnome-session gnome-control-center gnome-terminal nautilus adwaita-icon-theme gnome-backgrounds"
-  if ! command -v gnome-shell >/dev/null 2>&1; then
-    echo "== droiddeck-desktop: installing GNOME (first start only, this takes a while)"
-    sudo apt-get update 2>&1 | tail -3
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $gnome_packages 2>&1 | tail -5
-  fi
-  if command -v gnome-shell >/dev/null 2>&1; then
-    export XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_DESKTOP=gnome DESKTOP_SESSION=gnome
-    unset KDE_FULL_SESSION KDE_SESSION_VERSION KDE_APPLICATIONS_AS_SCOPE
-    export GDK_BACKEND=wayland,x11 QT_QPA_PLATFORM="wayland;xcb"
-    echo "== droiddeck-desktop: GNOME on $WAYLAND_DISPLAY"
-    gnome_started=$(date +%s)
-    if gnome-shell --help 2>&1 | grep -q -- --devkit; then
-      dbus-run-session -- gnome-shell --devkit --wayland
-    else
-      dbus-run-session -- gnome-shell --nested --wayland
-    fi
-    gnome_rc=$?
-    echo "== droiddeck-desktop: GNOME ended ($gnome_rc)"
-    if [ "$gnome_rc" -eq 0 ] && [ $(( $(date +%s) - gnome_started )) -ge 20 ]; then exit 0; fi
-    echo "== droiddeck-desktop: GNOME did not run, starting KDE Plasma instead"
-  else
-    echo "== droiddeck-desktop: GNOME is not installed, starting KDE Plasma instead"
-  fi
-  export XDG_CURRENT_DESKTOP=KDE XDG_SESSION_DESKTOP=KDE DESKTOP_SESSION=plasma
-  export KDE_FULL_SESSION=true KDE_SESSION_VERSION=6 KDE_APPLICATIONS_AS_SCOPE=0
-fi
 echo "== droiddeck-desktop: Plasma on $WAYLAND_DISPLAY"
 dbus-run-session -- startplasma-wayland
 rc=$?

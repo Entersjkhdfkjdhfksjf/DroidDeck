@@ -92,7 +92,6 @@ class ModeSettings(
     val unfoldedControls: Boolean? = null,
     val unfoldedControlsWithController: Boolean = false,
     val startupSession: String = SessionPrefs.STARTUP_OFF,
-    val desktopEnvironment: String = SessionPrefs.DESKTOP_KDE,
     val bootMovie: String? = null,
     val bootMovieSound: Boolean = true,
     val bootMovieCustomName: String? = null,
@@ -148,7 +147,6 @@ class ModeSettingsActions(
     val onUnfoldedControls: (Boolean) -> Unit = {},
     val onUnfoldedControlsWithController: (Boolean) -> Unit = {},
     val onStartupSession: (String) -> Unit = {},
-    val onDesktopEnvironment: (String) -> Unit = {},
     val onBootMovie: (String) -> Unit = {},
     val onBootMovieSound: (Boolean) -> Unit = {},
     val onImportBootMovie: () -> Unit = {},
@@ -371,14 +369,6 @@ fun ModeSheetRows(s: ModeSettings, a: ModeSettingsActions, tab: String, extras: 
                     SessionPrefs.STARTUP_OFF to stringResource(R.string.common_never),
                     SessionPrefs.STARTUP_DESKTOP to stringResource(R.string.rail_desktop),
                 ), s.startupSession, onPick = a.onStartupSession,
-            )
-            ChoiceRow(
-                host, "desktop-environment", "Desktop environment",
-                "GNOME installs itself the first time it starts, and falls back to KDE Plasma if it cannot run. Takes effect next time the desktop starts.",
-                listOf(
-                    SessionPrefs.DESKTOP_KDE to "KDE Plasma",
-                    SessionPrefs.DESKTOP_GNOME to "GNOME",
-                ), s.desktopEnvironment, onPick = a.onDesktopEnvironment,
             )
         }
         extras.performance()

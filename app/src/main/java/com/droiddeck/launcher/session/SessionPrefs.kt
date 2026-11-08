@@ -1122,16 +1122,6 @@ object SessionPrefs {
         return p.getString("startupSession", null) ?: STARTUP_DESKTOP
     }
 
-    const val DESKTOP_KDE = "kde"
-    const val DESKTOP_GNOME = "gnome"
-
-    fun desktopEnvironment(context: Context): String =
-        prefs(context).getString("desktopEnvironment", null)?.takeIf { it == DESKTOP_GNOME } ?: DESKTOP_KDE
-
-    fun setDesktopEnvironment(context: Context, id: String) {
-        prefs(context).edit().putString("desktopEnvironment", if (id == DESKTOP_GNOME) DESKTOP_GNOME else DESKTOP_KDE).apply()
-    }
-
     fun setStartupSession(context: Context, id: String) {
         prefs(context).edit().putString("startupSession", id).remove("runSteamAtStartup").apply()
     }

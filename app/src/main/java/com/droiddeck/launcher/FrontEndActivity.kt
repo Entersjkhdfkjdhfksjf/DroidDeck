@@ -509,7 +509,6 @@ class FrontEndActivity : ComponentActivity() {
     private var forceSsbs by mutableStateOf(false)
     private var steamClientArch by mutableStateOf("arm64")
     private var startupSession by mutableStateOf(SessionPrefs.STARTUP_OFF)
-    private var desktopEnvironment by mutableStateOf(SessionPrefs.DESKTOP_KDE)
     private var bootMovie by mutableStateOf(com.droiddeck.launcher.session.BootMovie.DROIDDECK_30)
     private var bootMovieSound by mutableStateOf(true)
     private var bootMovieCustomName by mutableStateOf<String?>(null)
@@ -2380,7 +2379,6 @@ class FrontEndActivity : ComponentActivity() {
                 mangoapp = mangoapp,
                 steamController = if (mode == SessionService.MODE_STEAM) steamController else null,
                 startupSession = startupSession,
-                desktopEnvironment = desktopEnvironment,
                 bootMovie = if (mode == SessionService.MODE_STEAM) bootMovie else null,
                 bootMovieSound = bootMovieSound,
                 bootMovieCustomName = bootMovieCustomName,
@@ -2477,10 +2475,6 @@ class FrontEndActivity : ComponentActivity() {
                 onStartupSession = { id ->
                     SessionPrefs.setStartupSession(this, id)
                     startupSession = id
-                },
-                onDesktopEnvironment = { id ->
-                    SessionPrefs.setDesktopEnvironment(this, id)
-                    desktopEnvironment = SessionPrefs.desktopEnvironment(this)
                 },
                 onBootMovie = { id -> com.droiddeck.launcher.session.BootMovie.select(this, id); loadBootMovie() },
                 onBootMovieSound = { on -> SessionPrefs.setBootMovieSound(this, on); bootMovieSound = on },
@@ -2672,7 +2666,6 @@ class FrontEndActivity : ComponentActivity() {
         loadShaderPrecache(mode)
         steamController = SessionPrefs.steamController(this)
         startupSession = SessionPrefs.startupSession(this)
-        desktopEnvironment = SessionPrefs.desktopEnvironment(this)
         loadBootMovie()
         hdrOn = SessionPrefs.hdr(this, mode)
         upscaler = SessionPrefs.upscaler(this)
