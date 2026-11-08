@@ -69,6 +69,29 @@ jobs:
           restore-keys: |
             desktop-apk-${{ runner.os }}-
 
+      - name: Fetch PulseAudio 13.0 source (GitHub's tag archive keeps returning 504)
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/pulseaudio-13.0"
+          mkdir -p "$dest"
+          for url in \
+            https://freedesktop.org/software/pulseaudio/releases/pulseaudio-13.0.tar.gz \
+            https://freedesktop.org/software/pulseaudio/releases/pulseaudio-13.0.tar.xz \
+            https://codeload.github.com/pulseaudio/pulseaudio/tar.gz/refs/tags/v13.0 \
+            https://github.com/pulseaudio/pulseaudio/archive/refs/tags/v13.0.tar.gz; do
+            echo "trying $url"
+            if curl -fsSL --retry 4 --retry-delay 10 --connect-timeout 20 -o "$RUNNER_TEMP/pa13.tar" "$url" \
+                && tar -xaf "$RUNNER_TEMP/pa13.tar" -C "$dest" --strip-components=1 \
+                && test -f "$dest/src/pulse/version.h.in"; then
+              echo "DROIDDECK_PA13_SOURCE_DIR=$dest" >> "$GITHUB_ENV"
+              echo "got PulseAudio 13.0 from $url"
+              exit 0
+            fi
+            rm -rf "$dest"; mkdir -p "$dest"
+          done
+          echo "could not fetch the PulseAudio 13.0 source" >&2
+          exit 1
+
       - name: Pre-pull the x86 preload base image (retry on registry rate limits)
         run: |
           ecr=public.ecr.aws/docker/library/debian:bullseye
