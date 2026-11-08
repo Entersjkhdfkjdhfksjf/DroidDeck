@@ -116,35 +116,32 @@ if [ "$(cat /usr/share/droiddeck/kwin-compositor 2>/dev/null)" = opengl ]; then
   export PATH=/run/droiddeck/kwin:$PATH
 fi
 if [ "${BL_DESKTOP_ENV:-kde}" = gnome ]; then
-  # GNOME 49+ only runs nested through mutter-devkit (package mutter-dev-bin); --nested no longer exists.
-  gnome_packages="gnome-shell mutter-dev-bin gnome-session gnome-control-center gnome-terminal nautilus adwaita-icon-theme gnome-backgrounds"
-  if ! command -v gnome-shell >/dev/null 2>&1 || ! dpkg -s mutter-dev-bin >/dev/null 2>&1; then
+  gnome_packages="gnome-shell gnome-session gnome-control-center gnome-terminal nautilus adwaita-icon-theme gnome-backgrounds"
+  if ! command -v gnome-shell >/dev/null 2>&1; then
     echo "== droiddeck-desktop: installing GNOME (first start only, this takes a while)"
     sudo apt-get update 2>&1 | tail -3
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $gnome_packages 2>&1 | tail -8
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $gnome_packages 2>&1 | tail -5
   fi
-  if command -v gnome-shell >/dev/null 2>&1 && dpkg -s mutter-dev-bin >/dev/null 2>&1; then
-    export XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_DESKTOP=gnome DESKTOP_SESSION=gnome XDG_SESSION_TYPE=wayland
+  if command -v gnome-shell >/dev/null 2>&1; then
+    export XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_DESKTOP=gnome DESKTOP_SESSION=gnome
     unset KDE_FULL_SESSION KDE_SESSION_VERSION KDE_APPLICATIONS_AS_SCOPE
-    export GDK_BACKEND=wayland QT_QPA_PLATFORM="wayland;xcb"
-    # No portal service in here: without these GTK waits ~30s per portal call before giving up.
-    export GDK_DEBUG=no-portals GTK_USE_PORTAL=0 GIO_USE_PORTALS=0
-    export MUTTER_DEBUG_DUMMY_MODE_SPECS="${BL_WIDTH:-1280}x${BL_HEIGHT:-720}"
-    gnome_flags="--devkit --wayland"
-    if gnome-shell --help 2>&1 | grep -q -- --no-x11; then gnome_flags="$gnome_flags --no-x11"; fi
-    echo "== droiddeck-desktop: GNOME ($(gnome-shell --version 2>&1 | head -1)) on $WAYLAND_DISPLAY: gnome-shell $gnome_flags"
+    export GDK_BACKEND=wayland,x11 QT_QPA_PLATFORM="wayland;xcb"
+    echo "== droiddeck-desktop: GNOME on $WAYLAND_DISPLAY"
     gnome_started=$(date +%s)
-    dbus-run-session -- gnome-shell $gnome_flags 2>&1
+    if gnome-shell --help 2>&1 | grep -q -- --devkit; then
+      dbus-run-session -- gnome-shell --devkit --wayland
+    else
+      dbus-run-session -- gnome-shell --nested --wayland
+    fi
     gnome_rc=$?
     echo "== droiddeck-desktop: GNOME ended ($gnome_rc)"
     if [ "$gnome_rc" -eq 0 ] && [ $(( $(date +%s) - gnome_started )) -ge 20 ]; then exit 0; fi
     echo "== droiddeck-desktop: GNOME did not run, starting KDE Plasma instead"
   else
-    echo "== droiddeck-desktop: GNOME could not be installed (gnome-shell or mutter-dev-bin missing), starting KDE Plasma instead"
+    echo "== droiddeck-desktop: GNOME is not installed, starting KDE Plasma instead"
   fi
   export XDG_CURRENT_DESKTOP=KDE XDG_SESSION_DESKTOP=KDE DESKTOP_SESSION=plasma
   export KDE_FULL_SESSION=true KDE_SESSION_VERSION=6 KDE_APPLICATIONS_AS_SCOPE=0
-  unset GDK_DEBUG GTK_USE_PORTAL GIO_USE_PORTALS MUTTER_DEBUG_DUMMY_MODE_SPECS
 fi
 echo "== droiddeck-desktop: Plasma on $WAYLAND_DISPLAY"
 dbus-run-session -- startplasma-wayland
