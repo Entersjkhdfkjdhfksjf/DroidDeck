@@ -863,6 +863,7 @@ class SessionService : Service() {
             guest.add("HOME=" + LinuxRuntime.GUEST_HOME)
             guest.add("USER=" + LinuxRuntime.GUEST_USER)
             guest.add("LOGNAME=" + LinuxRuntime.GUEST_USER)
+            guest.add("BL_DESKTOP_ENV=" + SessionPrefs.desktopEnvironment(this))
         } else {
             guest.add("HOME=/root")
             guest.add("USER=root")
