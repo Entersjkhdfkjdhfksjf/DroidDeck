@@ -1122,6 +1122,17 @@ object SessionPrefs {
         return p.getString("startupSession", null) ?: STARTUP_DESKTOP
     }
 
+    const val DESKTOP_KEYBOARD_PC = "pc"
+    const val DESKTOP_KEYBOARD_ANDROID = "android"
+
+    /** Which keyboard a tap on a text field in the desktop brings up. The PC keyboard unless told otherwise. */
+    fun desktopKeyboard(context: Context): String =
+        if (prefs(context).getString("desktopKeyboard", null) == DESKTOP_KEYBOARD_ANDROID) DESKTOP_KEYBOARD_ANDROID else DESKTOP_KEYBOARD_PC
+
+    fun setDesktopKeyboard(context: Context, id: String) {
+        prefs(context).edit().putString("desktopKeyboard", if (id == DESKTOP_KEYBOARD_ANDROID) DESKTOP_KEYBOARD_ANDROID else DESKTOP_KEYBOARD_PC).apply()
+    }
+
     fun setStartupSession(context: Context, id: String) {
         prefs(context).edit().putString("startupSession", id).remove("runSteamAtStartup").apply()
     }

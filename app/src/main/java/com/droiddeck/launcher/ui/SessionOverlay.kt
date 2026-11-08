@@ -268,6 +268,9 @@ class DrawerActions(
     val wowChatShown: Boolean = false,
     val wowChat: String? = null,
     val onWowChat: (String?) -> Unit = {},
+    val desktopKeyboardShown: Boolean = false,
+    val desktopKeyboard: String = SessionPrefs.DESKTOP_KEYBOARD_PC,
+    val onDesktopKeyboard: (String) -> Unit = {},
     val onSteamMenu: (() -> Unit)?,
     val onQam: (() -> Unit)?,
     val onAchievements: (() -> Unit)? = null,
@@ -679,6 +682,15 @@ internal fun SessionDrawer(open: Boolean, requestedPage: SessionDrawerPage, cont
                                         host.open = null; a.onKeyboard()
                                     }
                                 }
+                                if (a.desktopKeyboardShown) ChoiceRow(
+                                    host, "desktop-keyboard", "Tapping a text field opens",
+                                    "Which keyboard comes up in the desktop. Either one is always in the buttons above.",
+                                    listOf(
+                                        SessionPrefs.DESKTOP_KEYBOARD_PC to "PC keyboard",
+                                        SessionPrefs.DESKTOP_KEYBOARD_ANDROID to "Android keyboard",
+                                    ),
+                                    a.desktopKeyboard, chipModifier = focus.track(page, "desktop-keyboard"), onPick = a.onDesktopKeyboard,
+                                )
                                 if (a.wowChatShown) ChoiceRow(
                                     host, "wow-chat", stringResource(R.string.wow_chat_title), null,
                                     listOf(

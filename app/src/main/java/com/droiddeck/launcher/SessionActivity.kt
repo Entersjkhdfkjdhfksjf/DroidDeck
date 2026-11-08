@@ -476,6 +476,8 @@ class SessionActivity : ComponentActivity(), SurfaceHolder.Callback {
     private var lastMouseY = Float.NaN
     private var padType by mutableStateOf(SessionPrefs.CONTROLLER_DECK)
     private var pcKeyboardOpen by mutableStateOf(false)
+    private var pcKeyboardAuto = false
+    private var desktopKeyboardChoice by mutableStateOf(SessionPrefs.DESKTOP_KEYBOARD_PC)
     private var achievementsInFront by mutableStateOf<AchievementsInFront?>(null)
     private var achievementsOpen by mutableStateOf(false)
     private var hudOn by mutableStateOf(true)
@@ -768,7 +770,10 @@ class SessionActivity : ComponentActivity(), SurfaceHolder.Callback {
             host.onImeChanged = { updateDesktopKeyboardButton() }
             root.addView(host)
         }
-        desktopKeyboardButton = com.droiddeck.launcher.input.DesktopKeyboardButton(this) { keyboard?.show() }
+        desktopKeyboardChoice = SessionPrefs.desktopKeyboard(this)
+        desktopKeyboardButton = com.droiddeck.launcher.input.DesktopKeyboardButton(this) {
+            if (desktopKeyboardChoice == SessionPrefs.DESKTOP_KEYBOARD_PC) showPcKeyboardForText() else keyboard?.show()
+        }
             .also { root.addView(it) }
         touchpad = TouchpadGestures(PointerGestures.slop(this), pointerListener)
         directTouchHold = DirectTouchHold(PointerGestures.slop(this), pointerListener, directTouchSink)
@@ -1285,6 +1290,12 @@ class SessionActivity : ComponentActivity(), SurfaceHolder.Callback {
             wowChatShown = com.droiddeck.launcher.ui.WowChat.isWow(AgentGuest.gameProgram),
             wowChat = wowChat.remembered,
             onWowChat = wowChat::choose,
+            desktopKeyboardShown = SessionState.mode == SessionService.MODE_DESKTOP,
+            desktopKeyboard = desktopKeyboardChoice,
+            onDesktopKeyboard = { id ->
+                SessionPrefs.setDesktopKeyboard(this@SessionActivity, id)
+                desktopKeyboardChoice = SessionPrefs.desktopKeyboard(this@SessionActivity)
+            },
             controller = controllerSettings,
             onRumble = { on -> updateControllerPrefs { ControllerPrefs.setRumble(this@SessionActivity, on) } },
             onSteamMenu = if (SessionState.mode == SessionService.MODE_STEAM) ({ sendSteamGuide() }) else null,
@@ -1538,7 +1549,14 @@ class SessionActivity : ComponentActivity(), SurfaceHolder.Callback {
         keyboard?.hide()
         onScreenControls?.releaseAll()
         bottomInputControls?.releaseAll()
+        pcKeyboardAuto = false
         pcKeyboardOpen = !pcKeyboardOpen
+    }
+
+    private fun showPcKeyboardForText() {
+        if (pcKeyboardOpen) return
+        togglePcKeyboard()
+        pcKeyboardAuto = true
     }
 
     private fun updateControllerPrefs(change: () -> Unit) {
@@ -4309,8 +4327,13 @@ class SessionActivity : ComponentActivity(), SurfaceHolder.Callback {
         if (host != null && desktopTextInput()) {
             val tapped = android.os.SystemClock.uptimeMillis() - lastUserPressMs < TEXT_FIELD_TAP_MS
             if (focused && tapped && resumed && !pcKeyboardOpen &&
-                resources.configuration.hardKeyboardHidden != android.content.res.Configuration.HARDKEYBOARDHIDDEN_NO) host.show()
-            else if (!focused && host.shown) host.hide()
+                resources.configuration.hardKeyboardHidden != android.content.res.Configuration.HARDKEYBOARDHIDDEN_NO) {
+                if (desktopKeyboardChoice == SessionPrefs.DESKTOP_KEYBOARD_PC) showPcKeyboardForText() else host.show()
+            } else if (!focused) {
+                if (host.shown) host.hide()
+                if (pcKeyboardAuto && pcKeyboardOpen) pcKeyboardOpen = false
+                pcKeyboardAuto = false
+            }
         }
         updateDesktopKeyboardButton()
     }
