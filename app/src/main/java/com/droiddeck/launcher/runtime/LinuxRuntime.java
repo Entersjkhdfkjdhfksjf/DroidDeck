@@ -27,6 +27,9 @@ public final class LinuxRuntime {
     public static final String EXTRA_LINUX_MODE = "linux_mode";
     private static final String KGSL_DEVICE = "/dev/kgsl-3d0";
     public static final String GUEST_RUNTIME_DIR = "/run/droiddeck";
+    /** The desktop's everyday account. It is the same Android uid as ever, just not named root. */
+    public static final String GUEST_USER = "user";
+    public static final String GUEST_HOME = "/home/" + GUEST_USER;
     public static final String GUEST_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games";
     private static final String SYSTEM_FONTS = "/system/fonts";
     private static final String GUEST_SYSTEM_FONTS = "/usr/local/share/fonts/android";
@@ -201,6 +204,11 @@ public final class LinuxRuntime {
         }
         bind(cmd, DeviceControlsComponent.prepareBacklight(context, root).getPath() + ":/sys/class/backlight");
         bind(cmd, "/dev/urandom:/dev/random");
+        File guestHome = new File(root, "root");
+        if (guestHome.isDirectory() || guestHome.mkdirs()) {
+            new File(root, GUEST_HOME.substring(1)).mkdirs();
+            bind(cmd, guestHome.getPath() + ":" + GUEST_HOME);
+        }
         bind(cmd, "/proc/self/fd:/dev/fd");
         bind(cmd, "/proc/self/fd/0:/dev/stdin");
         bind(cmd, "/proc/self/fd/1:/dev/stdout");
@@ -554,9 +562,10 @@ public final class LinuxRuntime {
         File root = rootDir(context);
         int uid = Process.myUid();
         mergeAccounts(new File(root, "etc/passwd"), 2,
-                "root:x:" + uid + ":" + uid + ":root:/root:/bin/bash", "root:x:0:0:root:/root:/bin/bash", uid);
+                GUEST_USER + ":x:" + uid + ":" + uid + ":" + GUEST_USER + ":" + GUEST_HOME + ":/bin/bash",
+                "root:x:0:0:root:/root:/bin/bash", uid);
         mergeAccounts(new File(root, "etc/group"), 2,
-                "root:x:" + uid + ":", "root:x:0:", uid);
+                GUEST_USER + ":x:" + uid + ":", "root:x:0:", uid);
         File group = new File(root, "etc/group");
         String groups = new String(Files.readAllBytes(group.toPath()), StandardCharsets.UTF_8);
         writeIfChanged(group, groups, withStorageGroups(groups));

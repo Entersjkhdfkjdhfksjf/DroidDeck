@@ -859,8 +859,14 @@ class SessionService : Service() {
         guest.add("/usr/bin/env")
         guest.add("-i")
         guest.add("DROIDDECK_BWRAP_SOCKET=" + com.droiddeck.launcher.runtime.BwrapSpawner.socket(this))
-        guest.add("HOME=/root")
-        guest.add("USER=root")
+        if (SessionState.mode == MODE_DESKTOP) {
+            guest.add("HOME=" + LinuxRuntime.GUEST_HOME)
+            guest.add("USER=" + LinuxRuntime.GUEST_USER)
+            guest.add("LOGNAME=" + LinuxRuntime.GUEST_USER)
+        } else {
+            guest.add("HOME=/root")
+            guest.add("USER=root")
+        }
         guest.add("PATH=" + LinuxRuntime.GUEST_PATH)
         guest.add("TERM=xterm-256color")
         if (SessionState.mode == MODE_DESKTOP) {
