@@ -69,6 +69,18 @@ jobs:
           restore-keys: |
             desktop-apk-${{ runner.os }}-
 
+      - name: Pre-pull the x86 preload base image (retry on registry rate limits)
+        run: |
+          ecr=public.ecr.aws/docker/library/debian:bullseye
+          for attempt in 1 2 3 4 5 6; do
+            if docker pull "$ecr"; then exit 0; fi
+            echo "pull failed (attempt $attempt), waiting"
+            sleep $((attempt * 20))
+          done
+          echo "falling back to Docker Hub's debian:bullseye"
+          docker pull debian:bullseye
+          docker tag debian:bullseye "$ecr"
+
       - name: Build
         env:
           DROIDDECK_NDK_VERSION: ${{ env.NDK_VERSION }}
