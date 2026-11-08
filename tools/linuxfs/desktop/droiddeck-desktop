@@ -115,6 +115,51 @@ if [ "$(cat /usr/share/droiddeck/kwin-compositor 2>/dev/null)" = opengl ]; then
   chmod 755 /run/droiddeck/kwin/kwin_wayland
   export PATH=/run/droiddeck/kwin:$PATH
 fi
+# First-start extras: VS Code, Google Antigravity and wallpapers, installed in the background.
+droiddeck_extras() {
+  state="$HOME/.local/state/droiddeck"; mkdir -p "$state" "$HOME/.cache"
+  log="$HOME/.cache/droiddeck-extras.log"
+  [ -e "$state/extras-v1.done" ] && return 0
+  echo "== extras $(date -u +%FT%TZ)" >> "$log"
+  for i in 1 2 3 4 5 6; do curl -fsI --max-time 8 https://packages.microsoft.com >/dev/null 2>&1 && break; sleep 10; done
+  sudo mkdir -p /etc/apt/keyrings
+  # VS Code (Microsoft's own apt repository, arm64 builds)
+  sudo sh -c 'echo "code code/add-microsoft-repo boolean false" | debconf-set-selections' >> "$log" 2>&1
+  sudo curl -fsSL -o /etc/apt/keyrings/microsoft.asc https://packages.microsoft.com/keys/microsoft.asc >> "$log" 2>&1
+  sudo sh -c 'echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/microsoft.asc] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+  # Google Antigravity (Google's own apt repository)
+  sudo curl -fsSL -o /etc/apt/keyrings/antigravity-repo-key.asc https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg >> "$log" 2>&1
+  sudo sh -c 'echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.asc] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" > /etc/apt/sources.list.d/antigravity.list'
+  sudo apt-get update >> "$log" 2>&1
+  for pkg in code antigravity gnome-backgrounds ubuntu-wallpapers; do
+    dpkg -s "$pkg" >/dev/null 2>&1 && continue
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$pkg" >> "$log" 2>&1 \
+      || echo "!! could not install $pkg" >> "$log"
+  done
+  # Electron apps cannot use Chromium's sandbox in here; give them launchers that say so.
+  mkdir -p "$HOME/.local/share/applications" "$HOME/.config"
+  printf '%s\n' --no-sandbox > "$HOME/.config/code-flags.conf"
+  for d in code code-url-handler antigravity antigravity-ide antigravity-url-handler; do
+    f="/usr/share/applications/$d.desktop"
+    [ -f "$f" ] || continue
+    sed -E '/^Exec=/{/--no-sandbox/!s#^(Exec=[^ ]+)#\1 --no-sandbox#}' "$f" > "$HOME/.local/share/applications/$d.desktop"
+  done
+  # Wallpapers: show GNOME's and Ubuntu's sets in Plasma's wallpaper picker.
+  mkdir -p "$HOME/.local/share/wallpapers"
+  find /usr/share/backgrounds -maxdepth 2 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.svg' \) 2>/dev/null \
+    | while read -r img; do ln -sf "$img" "$HOME/.local/share/wallpapers/$(basename "$img")"; done
+  if [ ! -e "$state/wallpaper-set" ]; then
+    pick=$(find /usr/share/backgrounds/gnome /usr/share/backgrounds -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | sort | head -1)
+    if [ -n "$pick" ]; then
+      for i in $(seq 1 30); do pgrep -x plasmashell >/dev/null 2>&1 && break; sleep 4; done
+      sleep 10
+      plasma-apply-wallpaperimage "$pick" >> "$log" 2>&1 && touch "$state/wallpaper-set"
+    fi
+  fi
+  if dpkg -s code >/dev/null 2>&1 && dpkg -s antigravity >/dev/null 2>&1; then touch "$state/extras-v1.done"; fi
+  echo "== extras finished" >> "$log"
+}
+( droiddeck_extras ) </dev/null >/dev/null 2>&1 &
 echo "== droiddeck-desktop: Plasma on $WAYLAND_DISPLAY"
 dbus-run-session -- startplasma-wayland
 rc=$?
